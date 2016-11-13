@@ -39,8 +39,8 @@ public class TriangleTest {
     };
 
     public static double[][] footTime = new double[][]{
-        { inf, 14, 69, 76, 28, 296 },
-        { 14, inf, 82, 88, 39, 264 },
+        { inf, 14, 69, 76, 28, 269 },
+        { 14, inf, 81, 88, 39, 264 },
         { 69, 81, inf, 12, 47, 270 },
         { 76, 88, 12, inf, 55, 285 },
         { 28, 39, 47, 55, inf, 264 },
@@ -51,14 +51,35 @@ public class TriangleTest {
         for (int i = 0; i < 6; i++) {
             for (int j = i+1; j < 6; j++) {
                 for (int k = i+1; k < j; k++) {
-                    if (publicCost[i][k] + publicCost[k][j] <= publicCost[i][j]) {
-                        System.out.print("oops, public fails on node: ");
+                    if (publicCost[i][k] + publicCost[k][j] < publicCost[i][j]) {
+                        System.out.print("oops, publicCost fails on node: ");
                         System.out.print(i);
                         System.out.print(j);
                         System.out.println(k);
                     }
-                    if (taxiCost[i][k] + publicCost[k][j] <= publicCost[i][j]) {
-                        System.out.print("oops, taxi fails on node: ");
+                    if (taxiCost[i][k] + taxiCost[k][j] < taxiCost[i][j]) {
+                        System.out.print("oops, taxiCost fails on node: ");
+                        System.out.print(i);
+                        System.out.print(j);
+                        System.out.println(k);
+                    }
+                    if (publicTime[i][k] + publicTime[k][j] < publicTime[i][j]) {
+                        System.out.print("oops, publicTime fails on node: ");
+                        System.out.print(i);
+                        System.out.print(j);
+                        System.out.println(k);
+                    }
+                    if (taxiTime[i][k] + taxiTime[k][j] < taxiTime[i][j]) {
+                        System.out.print("oops, taxiTime fails on node: ");
+                        System.out.print(i);
+                        System.out.print(j);
+                        System.out.println(k);
+                    }
+                    if (footTime[i][k] + footTime[k][j] < footTime[i][j]) {
+                        System.out.print("oops, footTime fails on node: ");
+                        System.out.print(footTime[i][k]);
+                        System.out.print(footTime[k][j]);
+                        System.out.print(footTime[i][j]);
                         System.out.print(i);
                         System.out.print(j);
                         System.out.println(k);
@@ -70,4 +91,4 @@ public class TriangleTest {
 }
 
 // notes:
-// triangle inequality about cost fails on public trans, route 0->2->3 and 1->2->3.
+// publicCost fails on route 0->2->3 and 1->2->3
