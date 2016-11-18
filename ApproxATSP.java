@@ -53,20 +53,21 @@ public class ApproxATSP {
 
     public static main (String[] args) {
         approxATSPTour(publicTime, publicCost, {0,1,2,3,4,5});
-
     }
 
-    public static void approxATSPTour (double[][] time, double[][] cost, int[] toVisit) {
+    private static void approxATSPTour (double[][] time, double[][] cost, int[] toVisit) {
         double[][] newTime = toSymmetric(time);
+        Prim mst = new Prim(time);
+        newTime = subGraph(time, mst.oddDegreeV());
+        vertex[] m = minPerfectMatch(newTime); // TODO
+        for (v : m) newTime.addEdge(v);
+        int[] route = eulerTour(newTime); // TODO
+        // TODO: merge every V and V'
+        // TODO: remove repeated vertices
+        // TODO: based on budget left, take taxi
     }
 
-    private static int[][] prim (double[][] time) {
-        // source: (0, 0);
-        int[][] walk = new int[6][6];
-        return walk;
-    }
-
-    public static double[][] toSymmetric (double[][] g) {
+    private static double[][] toSymmetric (double[][] g) {
         int size = g.length * 2;
         double[][] newG = new double[size][size];
         for (int i = 0; i < size; i++) {
@@ -83,6 +84,15 @@ public class ApproxATSP {
             }
         }
         return newG;
+    }
+
+    private static double[][] subGraph (double[][] g, int[] vToKeep) {
+        for (i = 0; i < g.length; i++) {
+            for (j = 0; j < g.length; j++ ) {
+                if (vToKeep[i] == 0 | vToKeep[j] == 0) g[i][j] = inf;
+            }
+        }
+        return g;
     }
 
 }
