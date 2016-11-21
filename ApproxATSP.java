@@ -161,22 +161,7 @@ public class ApproxATSP {
         }
     }
 
-    //public static ArrayList<Integer> deleteDuplicate(ArrayList<Integer> input){
-    //    for (int i = 0; i < input.size(); i++) {
-    //        int n = input.get(i);
-    //        if (n >= numberOfPlaces) {
-    //            input.set(i, n - numberOfPlaces);
-    //       }
-    //    }
-    //    int i = 0;
-    //    while (true) {
-    //        if (input.get(i) == input.get(i+1)) {
-    //            input.remove(++i);
-    //        }
-    //        if (i == input.size() - 1) return input;
-    //    }
-    //}
-	
+
 	public static ArrayList<Integer> deleteDuplicate(ArrayList<Integer> input){
         ArrayList<Integer> output = new ArrayList<>();
         for (int i: input){
@@ -194,6 +179,7 @@ public class ApproxATSP {
         return output;
     }
 	
+
 	
 	
 
