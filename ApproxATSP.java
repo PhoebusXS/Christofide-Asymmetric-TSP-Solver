@@ -59,15 +59,17 @@ public class ApproxATSP {
     }
 
     private static void approxATSPTour (double[][] time, double[][] cost, int[] toVisit) {
-        double[][] newTime = toSymmetric(time);
-        Prim mst = new Prim(time);
-        double[][] subTime = subGraph(time, mst.oddDegreeV());
-        ArrayList<Edge> matches = minGreedyMatch(subTime);
-        for (Edge e : matches) subTime[e.src()][e.des()] = newTime[e.src()][e.des()];
-        int[] route = eulerTour(newTime); // TODO
-        // TODO: merge every V and V'
-        // TODO: remove repeated vertices
-        // TODO: based on budget left, take taxi
+        // Using Christofides Algorithm
+        
+        double[][] newTime = toSymmetric(time); // Convert asymmetric graph to symmetric, by adding ghost vertices
+        Prim mst = new Prim(time); // MST by Prim
+        double[][] subTime = subGraph(time, mst.oddDegreeV()); // Obtain subgraph
+        ArrayList<Edge> matches = minGreedyMatch(subTime); // An approx. to minimum perfect match
+        for (Edge e : matches) subTime[e.src()][e.des()] = newTime[e.src()][e.des()]; // Add matches to subGraph
+        ArrayList<Integer> route = eulerTour(newTime); // Getting eulerian cycle
+        route = deleteDuplicate(route); // Merge ghost vertices
+        route = deleteRivisited(route); // TODO: Delete revisited vertices
+        planTransportation(route); // TODO: Based on budget left, take taxi
     }
 
     private static double[][] toSymmetric (double[][] g) {
@@ -114,7 +116,6 @@ public class ApproxATSP {
         // sort edges (ascending)
         Collections.sort(allEdges, (e1, e2) -> Double.compare(getEdgeWeight(g, e1), getEdgeWeight(g, e2)));
 
-        double matchingWeight = inf; // TODO
         Set<Integer> matchedVertices = new HashSet<Integer>();
         
         for (Edge e : allEdges) {
@@ -137,50 +138,60 @@ public class ApproxATSP {
     }
 
 
-    private static int[] eulerTour (double[][] g){
-        // create local view of adjacency lists, to iterate one vertex at a time
-        Iterator<Integer>[] adj = (Iterator<Integer>[]) new Iterator[g.length];
-        for (int v = 0; v < g.length; v++)
-            adj[v] = g[v].iterator();
-
-        // initialize stack with any non-isolated vertex
-        int s = nonIsolatedVertex(G);
+    private static ArrayList<Integer> eulerTour (double[][] g){
         Stack<Integer> stack = new Stack<Integer>();
-        stack.push(s);
-
-        // greedily add to putative cycle, depth-first search style
-        cycle = new Stack<Integer>();
+        stack.push(0); // start at 0
+        Stack<Integer> cycle = new Stack<Integer>();
         while (!stack.isEmpty()) {
             int v = stack.pop();
-            while (adj[v].hasNext()) {
+            boolean noNext = true;
+            while (hasNext(g[v]) != -1) {
                 stack.push(v);
-                v = adj[v].next();
+                v = hasNext(g[v]);
             }
-            // add vertex with no more leaving edges to cycle
             cycle.push(v);
         }
+        return new ArrayList<Integer>(cycle);
     }
 
+    private static ArrayList<Integer> deleteDuplicate (ArrayList<Integer> input) {
+        for (int i = 0; i < input.size(); i++) {
+            int n = input.get(i);
+            if (n >= numberOfPlaces) {
+                input.set(i, n - numberOfPlaces);
+            }
+        }
+        int i = 0;
+        while (i < input.size()) {
+            if (input.get(i).equals(input.get(i+1))) input.remove(i);
+            i++;
+        }
+        return input;
+    }
 
-	public static ArrayList<Integer> deleteDuplicate(ArrayList<Integer> input){
+    private static int hasNext(double[] adj) {
+        for (int i = 0; i < adj.length; i++) {
+            if (adj[i] != inf) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    public static ArrayList<Integer> deleteDuplicate (ArrayList<Integer> input) {
         ArrayList<Integer> output = new ArrayList<>();
-        for (int i: input){
+        for (int i : input) {
             boolean in = false;
-            for (int j: output){
-                if (i==j){
+            for (int j : output) {
+                if (i == j) {
                     in = true;
                 }
             }
-            if (!in){
+            if (!in) {
                 output.add(i);
             }
-
         }
         return output;
     }
-	
-
-	
-	
 
 }
