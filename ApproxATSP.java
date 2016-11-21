@@ -115,7 +115,7 @@ public class ApproxATSP {
         Collections.sort(allEdges, (e1, e2) -> Double.compare(getEdgeWeight(g, e1), getEdgeWeight(g, e2)));
 
         double matchingWeight = inf; // TODO
-        Set<Edge> matchedVertices = new HashSet<Edge>();
+        Set<Integer> matchedVertices = new HashSet<Integer>();
         
         for (Edge e : allEdges) {
             int src = e.src();
@@ -137,49 +137,32 @@ public class ApproxATSP {
     }
 
 
-    private static Queue<Edge> eulerTour (double[][] g){
-        Queue<Edge>[] adj = (Queue<Edge>[]) new Queue[G.V()];
-        for (int v = 0; v < G.V(); v++)
-            adj[v] = new Queue<Edge>();
+    private static int[] eulerTour (double[][] g){
+        LinkedList path=new LinkedList();
+        Vector tmpPath = new Vector();
+        int j=0;
 
-        for (int v = 0; v < G.V(); v++) {
-            int selfLoops = 0;
-            for (int w : G.adj(v)) {
-                // careful with self loops
-                if (v == w) {
-                    if (selfLoops % 2 == 0) {
-                        Edge e = new Edge(v, w);
-                        adj[v].enqueue(e);
-                        adj[w].enqueue(e);
+        //Add the first cycle in the path, getNextChild goes depth first
+        nodes[0].getNextChild( nodes[0].getName(), tmpPath, true );
+        path.addAll(0, tmpPath);
+                
+        //go through all the nodes in our path, if the node has more outgoing edges so check cycles after this. stop the bike in the right place
+        while(j < path.size()) {
+            if(nodes[((Integer)path.get(j)).intValue()].hasMoreChilds()) {
+                nodes[((Integer)path.get(j)).intValue()].getNextChild( nodes[((Integer)path.get(j)).intValue()].getName(),tmpPath,true );
+                if(tmpPath.size()>0) {
+                    //reassemble the path and tmpPath
+                    for(int i = 0; i < path.size(); i++) {
+                        if( ((Integer)path.get(i)).intValue() == ((Integer)tmpPath.elementAt(0)).intValue() ) {
+                            path.addAll(i, tmpPath);
+                            break;
+                        }
                     }
-                    selfLoops++;
+                    tmpPath.clear();
                 }
-                else if (v < w) {
-                    Edge e = new Edge(v, w);
-                    adj[v].enqueue(e);
-                    adj[w].enqueue(e);
-                }
+                j = 0;
             }
-        }
-
-        // initialize stack with any non-isolated vertex
-        int s = nonIsolatedVertex(G);
-        Stack<Integer> stack = new Stack<Integer>();
-        stack.push(s);
-
-        // greedily search through edges in iterative DFS style
-        cycle = new Stack<Integer>();
-        while (!stack.isEmpty()) {
-            int v = stack.pop();
-            while (!adj[v].isEmpty()) {
-                Edge edge = adj[v].dequeue();
-                if (edge.isUsed) continue;
-                edge.isUsed = true;
-                stack.push(v);
-                v = edge.other(v);
-            }
-            // push vertex with no more leaving edges to cycle
-            cycle.push(v);
+            else j++;
         }
     }
 
