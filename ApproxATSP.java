@@ -166,19 +166,19 @@ public class ApproxATSP {
         }
     }
 
-
-	
-	
-	public static ArrayList<Integer> delete_duplicate(ArrayList<Integer> input){
-        for (int i=1;i<input.size();i++){
-            if (input.get(i)==input.get(i-1)){
-                input.remove(i);
-                delete_duplicate(input);
-                break;
+	public static ArrayList<Integer> deleteDuplicate(ArrayList<Integer> input){
+        for (int i = 0; i < input.size(); i++) {
+            int n = input.get(i);
+            if (n >= numberOfPlaces) {
+                input.set(i, n - numberOfPlaces);
             }
         }
-        return input;
+        int i = 0;
+        while (intput.get(i) == input.get(i+1)) {
+            input.remove(i+1);
+            i++;
+            if (i = input.size()) return input;
+        }
     }
-	
 	
 }
