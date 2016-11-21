@@ -67,9 +67,8 @@ public class ApproxATSP {
         ArrayList<Edge> matches = minGreedyMatch(subTime); // An approx. to minimum perfect match
         for (Edge e : matches) subTime[e.src()][e.des()] = newTime[e.src()][e.des()]; // Add matches to subGraph
         ArrayList<Integer> route = eulerTour(newTime); // Getting eulerian cycle
-        route = deleteDuplicate(route); // Merge ghost vertices
-        route = deleteRivisited(route); // TODO: Delete revisited vertices
-        planTransportation(route); // TODO: Based on budget left, take taxi
+        route = deleteDuplicate(route); // Merge ghost vertices and delete revisited vertices
+        planTransportation(route, budget, publicCost, taxiCost, publicTime, taxiTime); // TODO: Based on budget left, take taxi
     }
 
     private static double[][] toSymmetric (double[][] g) {
@@ -154,21 +153,6 @@ public class ApproxATSP {
         return new ArrayList<Integer>(cycle);
     }
 
-    private static ArrayList<Integer> deleteDuplicate (ArrayList<Integer> input) {
-        for (int i = 0; i < input.size(); i++) {
-            int n = input.get(i);
-            if (n >= numberOfPlaces) {
-                input.set(i, n - numberOfPlaces);
-            }
-        }
-        int i = 0;
-        while (i < input.size()) {
-            if (input.get(i).equals(input.get(i+1))) input.remove(i);
-            i++;
-        }
-        return input;
-    }
-
     private static int hasNext(double[] adj) {
         for (int i = 0; i < adj.length; i++) {
             if (adj[i] != inf) {
@@ -178,7 +162,7 @@ public class ApproxATSP {
         return -1;
     }
 
-    public static ArrayList<Integer> deleteDuplicate (ArrayList<Integer> input) {
+    private static ArrayList<Integer> deleteDuplicate (ArrayList<Integer> input) {
         ArrayList<Integer> output = new ArrayList<>();
         for (int i : input) {
             boolean in = false;
@@ -192,6 +176,51 @@ public class ApproxATSP {
             }
         }
         return output;
+    }
+
+    private static int[] planTransportation (ArrayList<Integer> route, double budget, double[][] publicCost, double[][] taxiCost, double[][] publicTime, double[][] taxiTime) {
+        int[] busOrTaxi = new int[route.size()]; // 0 -- bus, 1 -- taxi;
+        double ogTotCost = 0d;
+        double ogTotTime = 0d;
+        for (int i = 0; i < route.size() - 1; i++) {
+            ogTotCost += publicCost[route.get(i)][route.get(i+1)];
+            ogTotTime += publicTime[route.get(i)][route.get(i+1)];
+        }
+        budget -= ogTotCost;
+        ArrayList<Double> timeSaving = new ArrayList<Double> ();
+        ArrayList<Double> moneySpent = new ArrayList<Double> ();
+        ArrayList<Double> savingRatio = new ArrayList<Double> ();
+        ArrayList<Integer> transportation = new ArrayList<Integer> ();
+        double maxRatio = -inf;
+        double timeDiff;
+        double moneyDiff;
+        double ratio;
+        for (int k = 0; k < route.size() - 1; k++) {
+            int i = route.get(k);
+            for (int l = 1; l < route.size(); l++) {
+                int j = route.get(l);
+                timeDiff = publicTime[i][j] - taxiTime[i][j];
+                moneyDiff = taxiCost[i][j] - publicCost[i][j];
+                ratio = timeDiff / moneyDiff;
+                if (ratio > maxRatio && moneyDiff <= budget) {
+                    timeSaving.add(timeDiff);
+                    moneySpent.add(moneyDiff);
+                    savingRatio.add(ratio);
+                    transportation.add(i);
+                }
+            }
+        }
+        int startSize = savingRatio.size();
+        double totTime = ogTotTime;
+        for (int i = startSize - 1; i >= 0 ; i--) {
+            moneyDiff = moneySpent.get(i);
+            if (moneyDiff < budget) { // dicided to take taxi instead
+                budget -= moneyDiff;
+                totTime += timeSaving.get(i);
+                busOrTaxi[transportation.get(i)] = 1;
+            }
+        }
+        return busOrTaxi;
     }
 
 }
