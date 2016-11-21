@@ -1,3 +1,5 @@
+import java.util.*;
+
 public class ApproxATSP {
 
     private static double inf = Double.POSITIVE_INFINITY;
@@ -51,16 +53,17 @@ public class ApproxATSP {
     private int numberOfPlaces = 6;
     private double budget = 20;
 
-    public static main (String[] args) {
-        approxATSPTour(publicTime, publicCost, {0,1,2,3,4,5});
+    public static void main (String[] args) {
+        int[] toVisit = {0,1,2,3,4,5};
+        approxATSPTour(publicTime, publicCost, toVisit);
     }
 
     private static void approxATSPTour (double[][] time, double[][] cost, int[] toVisit) {
         double[][] newTime = toSymmetric(time);
         Prim mst = new Prim(time);
-        newTime = subGraph(time, mst.oddDegreeV());
-        vertex[] m = minPerfectMatch(newTime); // TODO
-        for (v : m) newTime.addEdge(v);
+        double[][] subTime = subGraph(time, mst.oddDegreeV());
+        ArrayList<Edge> matches = minGreedyMatch(subTime);
+        for (Edge e : matches) subTime[e.src()][e.des()] = newTime[e.src()][e.des()];
         int[] route = eulerTour(newTime); // TODO
         // TODO: merge every V and V'
         // TODO: remove repeated vertices
@@ -87,12 +90,97 @@ public class ApproxATSP {
     }
 
     private static double[][] subGraph (double[][] g, int[] vToKeep) {
-        for (i = 0; i < g.length; i++) {
-            for (j = 0; j < g.length; j++ ) {
+        for (int i = 0; i < g.length; i++) {
+            for (int j = 0; j < g.length; j++ ) {
                 if (vToKeep[i] == 0 | vToKeep[j] == 0) g[i][j] = inf;
             }
         }
         return g;
+    }
+
+    private static ArrayList<Edge> minGreedyMatch(double[][] g) {
+        ArrayList<Edge> matches = new ArrayList<Edge>();
+
+        // get edges in graph
+        ArrayList<Edge> allEdges = new ArrayList<Edge>();
+        for (int i = 0; i < g.length; i++) {
+            for (int j = 0; j < g.length; j++) {
+                if (g[i][j] != inf) {
+                    allEdges.add(new Edge(i, j));
+                }
+            }
+        }
+
+        // sort edges (ascending)
+        Collections.sort(allEdges, (e1, e2) -> Double.compare(getEdgeWeight(g, e1), getEdgeWeight(g, e2)));
+
+        double matchingWeight = inf; // TODO
+        Set<Edge> matchedVertices = new HashSet<Edge>();
+        
+        for (Edge e : allEdges) {
+            int src = e.src();
+            int des = e.des();
+            if (src != des) {
+                if (!matchedVertices.contains(src) && !matchedVertices.contains(des)) {
+                    matches.add(e);
+                    matchedVertices.add(src);
+                    matchedVertices.add(des);
+                }
+            }
+        }
+
+        return matches;
+    }
+
+    private static double getEdgeWeight(double[][] g, Edge e) {
+        return g[e.src()][e.des()];
+    }
+
+
+    private static Queue<Edge> eulerTour (double[][] g){
+        Queue<Edge>[] adj = (Queue<Edge>[]) new Queue[G.V()];
+        for (int v = 0; v < G.V(); v++)
+            adj[v] = new Queue<Edge>();
+
+        for (int v = 0; v < G.V(); v++) {
+            int selfLoops = 0;
+            for (int w : G.adj(v)) {
+                // careful with self loops
+                if (v == w) {
+                    if (selfLoops % 2 == 0) {
+                        Edge e = new Edge(v, w);
+                        adj[v].enqueue(e);
+                        adj[w].enqueue(e);
+                    }
+                    selfLoops++;
+                }
+                else if (v < w) {
+                    Edge e = new Edge(v, w);
+                    adj[v].enqueue(e);
+                    adj[w].enqueue(e);
+                }
+            }
+        }
+
+        // initialize stack with any non-isolated vertex
+        int s = nonIsolatedVertex(G);
+        Stack<Integer> stack = new Stack<Integer>();
+        stack.push(s);
+
+        // greedily search through edges in iterative DFS style
+        cycle = new Stack<Integer>();
+        while (!stack.isEmpty()) {
+            int v = stack.pop();
+            while (!adj[v].isEmpty()) {
+                Edge edge = adj[v].dequeue();
+                if (edge.isUsed) continue;
+                edge.isUsed = true;
+                stack.push(v);
+                v = edge.other(v);
+            }
+            // push vertex with no more leaving edges to cycle
+            cycle.push(v);
+        }
     }
 
 }
