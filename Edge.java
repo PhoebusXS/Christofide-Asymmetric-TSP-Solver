@@ -18,6 +18,7 @@ public class Edge {
     public int other (int vertex) {
         if (this.u == vertex) return v;
         if (this.v == vertex) return u;
+        return -1;
     }
 
 }
