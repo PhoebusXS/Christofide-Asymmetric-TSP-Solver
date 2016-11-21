@@ -50,8 +50,8 @@ public class ApproxATSP {
     };
 
     // values in this case
-    private int numberOfPlaces = 6;
-    private double budget = 20;
+    private static int numberOfPlaces = 6;
+    private static double budget = 20;
 
     public static void main (String[] args) {
         int[] toVisit = {0,1,2,3,4,5};
@@ -138,35 +138,30 @@ public class ApproxATSP {
 
 
     private static int[] eulerTour (double[][] g){
-        LinkedList path=new LinkedList();
-        Vector tmpPath = new Vector();
-        int j=0;
+        // create local view of adjacency lists, to iterate one vertex at a time
+        Iterator<Integer>[] adj = (Iterator<Integer>[]) new Iterator[g.length];
+        for (int v = 0; v < g.length; v++)
+            adj[v] = g[v].iterator();
 
-        //Add the first cycle in the path, getNextChild goes depth first
-        nodes[0].getNextChild( nodes[0].getName(), tmpPath, true );
-        path.addAll(0, tmpPath);
-                
-        //go through all the nodes in our path, if the node has more outgoing edges so check cycles after this. stop the bike in the right place
-        while(j < path.size()) {
-            if(nodes[((Integer)path.get(j)).intValue()].hasMoreChilds()) {
-                nodes[((Integer)path.get(j)).intValue()].getNextChild( nodes[((Integer)path.get(j)).intValue()].getName(),tmpPath,true );
-                if(tmpPath.size()>0) {
-                    //reassemble the path and tmpPath
-                    for(int i = 0; i < path.size(); i++) {
-                        if( ((Integer)path.get(i)).intValue() == ((Integer)tmpPath.elementAt(0)).intValue() ) {
-                            path.addAll(i, tmpPath);
-                            break;
-                        }
-                    }
-                    tmpPath.clear();
-                }
-                j = 0;
+        // initialize stack with any non-isolated vertex
+        int s = nonIsolatedVertex(G);
+        Stack<Integer> stack = new Stack<Integer>();
+        stack.push(s);
+
+        // greedily add to putative cycle, depth-first search style
+        cycle = new Stack<Integer>();
+        while (!stack.isEmpty()) {
+            int v = stack.pop();
+            while (adj[v].hasNext()) {
+                stack.push(v);
+                v = adj[v].next();
             }
-            else j++;
+            // add vertex with no more leaving edges to cycle
+            cycle.push(v);
         }
     }
 
-	public static ArrayList<Integer> deleteDuplicate(ArrayList<Integer> input){
+    public static ArrayList<Integer> deleteDuplicate(ArrayList<Integer> input){
         for (int i = 0; i < input.size(); i++) {
             int n = input.get(i);
             if (n >= numberOfPlaces) {
@@ -174,11 +169,12 @@ public class ApproxATSP {
             }
         }
         int i = 0;
-        while (intput.get(i) == input.get(i+1)) {
-            input.remove(i+1);
-            i++;
-            if (i = input.size()) return input;
+        while (true) {
+            if (input.get(i) == input.get(i+1)) {
+                input.remove(++i);
+            }
+            if (i == input.size() - 1) return input;
         }
     }
-	
+
 }
