@@ -22,13 +22,12 @@ public class Prim {
         int v;
         while (u != -1) {
             v = findMinEdge(u);
-            if (v == -1) System.exit(666);
+            if (v == -1) return;
             mst.addEdge(u, v);
             this.q[u] = 1;
             this.q[v] = 1;
             u = getFree();
         }
-
     }
 
     private int findMinEdge (int u) {

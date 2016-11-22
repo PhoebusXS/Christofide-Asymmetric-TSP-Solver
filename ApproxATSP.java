@@ -49,16 +49,20 @@ public class ApproxATSP {
         { 269, 264, 270, 285, 264, inf }
     };
 
-    // values in this case
+    // values used in this case
     private static int numberOfPlaces = 6;
     private static double budget = 20;
 
     public static void main (String[] args) {
+        /*
+        // an example of how to use this class
         int[] toVisit = {2,3,5};
-        approxATSPTour(publicTime, publicCost, taxiTime, taxiCost, toVisit);
+        int[][] plan = approxATSPTour(publicTime, publicCost, taxiTime, taxiCost, toVisit);
+        System.out.println(Arrays.deepToString(plan));
+        */
     }
 
-    private static void approxATSPTour (
+    private static int[][] approxATSPTour (
             double[][] publicTime,
             double[][] publicCost,
             double[][] taxiTime,
@@ -68,6 +72,7 @@ public class ApproxATSP {
 
         // Using Christofides Algorithm
         double[][] time = delUnvisitedNodes(publicTime, toVisit); // Keep only the nodes to visit, as triangle inequallity mostly holds
+
         double[][] newTime = toSymmetric(time); // Convert asymmetric graph to symmetric, by adding ghost vertices
         Prim mst = new Prim(time, 0); // MST by Prim
         double[][] subTime = subGraph(time, mst.oddDegreeV()); // Obtain subGraph
@@ -77,12 +82,21 @@ public class ApproxATSP {
         route = deleteDuplicate(route); // Merge ghost vertices and delete revisited vertices
         int[] transportation = planTransportation(route, budget, publicTime, publicCost, taxiTime, taxiCost); // Based on budget left, take taxi
 
+
         // Printing reults to console
         System.out.print("Visit order: ");
         for (int i = 0; i < route.size(); i++) System.out.print(route.get(i));
         System.out.println();
         System.out.print("Taking: taxi(1), bus(0): ");
         System.out.println(Arrays.toString(transportation));
+
+        // Arranging return value
+        int[][] routeAndTrans = new int[2][transportation.length];
+        for (int i = 0; i < transportation.length; i++) {
+            routeAndTrans[0][i] = route.get(i + 1);
+            routeAndTrans[1][i] = transportation[i];
+        }
+        return routeAndTrans;
 
     }
 
@@ -200,6 +214,7 @@ public class ApproxATSP {
                 output.add(i);
             }
         }
+        output.add(0); // Travel back to origin
         return output;
     }
 
@@ -211,7 +226,7 @@ public class ApproxATSP {
             double[][] taxiTime,
             double[][] taxiCost
         ) {
-        int[] busOrTaxi = new int[route.size()]; // 0 -- bus, 1 -- taxi;
+        int[] busOrTaxi = new int[route.size() - 1]; // 0 -- bus, 1 -- taxi;
         double ogTotCost = 0d;
         double ogTotTime = 0d;
         for (int i = 0; i < route.size() - 1; i++) {
@@ -252,6 +267,7 @@ public class ApproxATSP {
                 busOrTaxi[transportation.get(i)] = 1;
             }
         }
+        // Printing costs to console
         System.out.print("Money spent: ");
         System.out.println(20 - budget);
         System.out.print("Time spent: ");
