@@ -41,10 +41,17 @@ public class ApproxATSPTest {
     };
 
     public static void main (String[] args) {
+
+        long time = System.nanoTime();
+    	int[] toVisit = {1,2,3,4,5};
+
     	// example of the usage of ApproxATSP class
-    	int[] toVisit = {2,3,5};
         ApproxATSP solver = new ApproxATSP(publicTime, publicCost, taxiTime, taxiCost, toVisit, 20);
         int[][] plan = solver.getPlan();
+
+        time = System.nanoTime() - time;
 		System.out.println(Arrays.deepToString(plan));
+        System.out.print("Time used: ");
+        System.out.println((double) time/1000000 + "ms");
     }
 }
