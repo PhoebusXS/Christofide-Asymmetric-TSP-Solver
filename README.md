@@ -1,2 +1,2 @@
 # Itinerary-Planning
-ATSP Heuristic Approach by Christofide's algorithm.
+Approax. asymmetric TSP solver by Christofide's algorithm.
