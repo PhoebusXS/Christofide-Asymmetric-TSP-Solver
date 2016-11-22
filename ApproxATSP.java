@@ -2,9 +2,9 @@ import java.util.*;
 
 public class ApproxATSP {
 
-    private static double inf = Double.POSITIVE_INFINITY;
+    private static final double inf = Double.POSITIVE_INFINITY;
 
-    private static double[][] publicCost = new double[][] {
+    private static final double[][] publicCost = new double[][] {
         { inf, 0.83, 1.18, 4.03, 0.88, 1.96 },
         { 0.83, inf, 1.26, 4.03, 0.98, 1.89 },
         { 1.18, 1.26, inf, 2.00, 0.98, 1.99 },
@@ -13,7 +13,7 @@ public class ApproxATSP {
         { 1.88, 1.96, 2.11, 4.99, 1.91, inf }
     };
 
-    private static double[][] publicTime = new double[][] {
+    private static final double[][] publicTime = new double[][] {
         { inf, 17, 26, 35, 19, 84 },
         { 17, inf, 31, 38, 24, 85 },
         { 24, 29, inf, 10, 18, 85 },
@@ -22,7 +22,7 @@ public class ApproxATSP {
         { 86, 87, 86, 96, 84, inf }
     };
 
-    private static double[][] taxiCost = new double[][] {
+    private static final double[][] taxiCost = new double[][] {
         { inf, 3.22, 6.96, 8.5, 4.98, 18.4 },
         { 4.32, inf, 7.84, 9.38, 4.76, 18.18 },
         { 8.3, 7.96, inf, 4.54, 6.42, 22.58 },
@@ -31,7 +31,7 @@ public class ApproxATSP {
         { 22.48, 19.4, 21.48, 23.68, 21.6, inf }
     };
 
-    private static double[][] taxiTime = new double[][] {
+    private static final double[][] taxiTime = new double[][] {
         { inf, 3, 14, 19, 8, 30 },
         { 6, inf, 13, 18, 8, 29 },
         { 12, 14, inf, 9, 11, 31 },
@@ -40,7 +40,7 @@ public class ApproxATSP {
         { 32, 29, 32, 36, 30, inf }
     };
 
-    private static double[][] footTime = new double[][] {
+    private static final double[][] footTime = new double[][] {
         { inf, 14, 69, 76, 28, 269 },
         { 14, inf, 81, 88, 39, 264 },
         { 69, 81, inf, 12, 47, 270 },
@@ -54,21 +54,36 @@ public class ApproxATSP {
     private static double budget = 20;
 
     public static void main (String[] args) {
-        int[] toVisit = {0,1,2,3,4,5};
-        approxATSPTour(publicTime, publicCost, toVisit);
+        int[] toVisit = {2,3,5};
+        approxATSPTour(publicTime, publicCost, taxiTime, taxiCost, toVisit);
     }
 
-    private static void approxATSPTour (double[][] time, double[][] cost, int[] toVisit) {
+    private static void approxATSPTour (
+            double[][] publicTime,
+            double[][] publicCost,
+            double[][] taxiTime,
+            double[][] taxiCost,
+            int[] toVisit
+        ) {
+
         // Using Christofides Algorithm
-        
+        double[][] time = delUnvisitedNodes(publicTime, toVisit); // Keep only the nodes to visit, as triangle inequallity mostly holds
         double[][] newTime = toSymmetric(time); // Convert asymmetric graph to symmetric, by adding ghost vertices
-        Prim mst = new Prim(time); // MST by Prim
-        double[][] subTime = subGraph(time, mst.oddDegreeV()); // Obtain subgraph
+        Prim mst = new Prim(time, 0); // MST by Prim
+        double[][] subTime = subGraph(time, mst.oddDegreeV()); // Obtain subGraph
         ArrayList<Edge> matches = minGreedyMatch(subTime); // An approx. to minimum perfect match
         for (Edge e : matches) subTime[e.src()][e.des()] = newTime[e.src()][e.des()]; // Add matches to subGraph
         ArrayList<Integer> route = eulerTour(newTime); // Getting eulerian cycle
         route = deleteDuplicate(route); // Merge ghost vertices and delete revisited vertices
-        planTransportation(route, budget, publicCost, taxiCost, publicTime, taxiTime); // TODO: Based on budget left, take taxi
+        int[] transportation = planTransportation(route, budget, publicTime, publicCost, taxiTime, taxiCost); // Based on budget left, take taxi
+
+        // Printing reults to console
+        System.out.print("Visit order: ");
+        for (int i = 0; i < route.size(); i++) System.out.print(route.get(i));
+        System.out.println();
+        System.out.print("Taking: taxi(1), bus(0): ");
+        System.out.println(Arrays.toString(transportation));
+
     }
 
     private static double[][] toSymmetric (double[][] g) {
@@ -91,12 +106,17 @@ public class ApproxATSP {
     }
 
     private static double[][] subGraph (double[][] g, int[] vToKeep) {
+        double[][] ans = new double[g.length][g.length];
         for (int i = 0; i < g.length; i++) {
             for (int j = 0; j < g.length; j++ ) {
-                if (vToKeep[i] == 0 | vToKeep[j] == 0) g[i][j] = inf;
+                if (vToKeep[i] == 0 | vToKeep[j] == 0) {
+                    ans[i][j] = inf;
+                } else {
+                    ans[i][j] = g[i][j];
+                }
             }
         }
-        return g;
+        return ans;
     }
 
     private static ArrayList<Edge> minGreedyMatch(double[][] g) {
@@ -143,10 +163,11 @@ public class ApproxATSP {
         Stack<Integer> cycle = new Stack<Integer>();
         while (!stack.isEmpty()) {
             int v = stack.pop();
-            boolean noNext = true;
             while (hasNext(g[v]) != -1) {
                 stack.push(v);
-                v = hasNext(g[v]);
+                int tmp = hasNext(g[v]);
+                g[v][tmp] = inf;
+                v = tmp;
             }
             cycle.push(v);
         }
@@ -163,6 +184,10 @@ public class ApproxATSP {
     }
 
     private static ArrayList<Integer> deleteDuplicate (ArrayList<Integer> input) {
+        for (int i = 0; i < input.size(); i++) {
+            int n = input.get(i);
+            if (n >= numberOfPlaces) input.set(i, n - numberOfPlaces);
+        } // reverting ghost vertices to real vertices
         ArrayList<Integer> output = new ArrayList<>();
         for (int i : input) {
             boolean in = false;
@@ -178,7 +203,14 @@ public class ApproxATSP {
         return output;
     }
 
-    private static int[] planTransportation (ArrayList<Integer> route, double budget, double[][] publicCost, double[][] taxiCost, double[][] publicTime, double[][] taxiTime) {
+    private static int[] planTransportation (
+            ArrayList<Integer> route,
+            double budget,
+            double[][] publicTime,
+            double[][] publicCost,
+            double[][] taxiTime,
+            double[][] taxiCost
+        ) {
         int[] busOrTaxi = new int[route.size()]; // 0 -- bus, 1 -- taxi;
         double ogTotCost = 0d;
         double ogTotTime = 0d;
@@ -220,7 +252,20 @@ public class ApproxATSP {
                 busOrTaxi[transportation.get(i)] = 1;
             }
         }
+        System.out.print("Money spent: ");
+        System.out.println(20 - budget);
+        System.out.print("Time spent: ");
+        System.out.println(totTime);
         return busOrTaxi;
+    }
+
+    private static double[][] delUnvisitedNodes (double[][] g, int[] toVisit) {
+        int[] withOrigin = new int[g.length];
+        for (int i = 0; i < toVisit.length; i++) {
+            withOrigin[toVisit[i]] = 1;
+        }
+        withOrigin[0] = 1;
+        return subGraph(g, withOrigin);
     }
 
 }
